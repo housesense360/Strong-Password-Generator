@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>advanced password generator · lastpass style</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0b0d10;
+      padding: 1rem;
+    }
+
+    /* dark modern card */
+    .generator-card {
+      max-width: 780px;
+      width: 100%;
+      background: #181b20;
+      border-radius: 2rem;
+      padding: 2rem 2rem 2.5rem;
+      box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(75, 85, 99, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    h1 {
+      font-size: 1.9rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: #eef2f5;
+      margin-bottom: 0.2rem;
+    }
+
+    .sub {
+      color: #9aa7b9;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+      border-left: 3px solid #3b82f6;
+      padding-left: 0.75rem;
+    }
+
+    /* password field + copy row */
+    .password-output {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.6rem;
+      flex-wrap: wrap;
+    }
+
+    .password-input-wrapper {
+      flex: 1;
+      position: relative;
+      min-width: 240px;
+    }
+
+    #passwordField {
+      width: 100%;
+      background: #252b33;
+      border: 1px solid #36404a;
+      color: #e6edf5;
+      font-size: 1.4rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      padding: 0.9rem 3rem 0.9rem 1.2rem;
+      border-radius: 1.2rem;
+      letter-spacing: 0.5px;
+      transition: 0.15s;
+    }
+
+    #passwordField:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    }
+
+    .toggle-visibility {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #9cb3d4;
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 8px;
+      transition: 0.1s;
+    }
+
+    .toggle-visibility:hover {
+      color: #d9e6ff;
+      background: #2e3843;
+    }
+
+    .icon-btn {
+      background: #2a323c;
+      border: none;
+      color: #ccddee;
+      font-size: 1.6rem;
+      width: 3.4rem;
+      height: 3.4rem;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid #3e4a57;
+    }
+
+    .icon-btn:hover {
+      background: #364554;
+      color: white;
+      border-color: #5f7ea0;
+      transform: scale(1.04);
+    }
+
+    .icon-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* strength meter */
+    .strength-section {
+      background: #1f262e;
+      padding: 1.2rem 1.4rem;
+      border-radius: 1.4rem;
+      margin: 1.8rem 0 2rem;
+    }
+
+    .meter-labels {
+      display: flex;
+      justify-content: space-between;
+      color: #b7c9e0;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .meter-bar-bg {
+      height: 12px;
+      background: #2d3743;
+      border-radius: 40px;
+      overflow: hidden;
+      margin-bottom: 0.7rem;
+    }
+
+    #strengthFill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #f59e0b, #ef4444, #3b82f6, #10b981);
+      border-radius: 40px;
+      transition: width 0.2s ease;
+    }
+
+    .entropy-row {
+      display: flex;
+      justify-content: space-between;
+      color: #a5bbd5;
+      font-size: 0.95rem;
+    }
+
+    #entropyBits, #crackTime {
+      font-weight: 600;
+      color: #eef4ff;
+      font-family: monospace;
+    }
+
+    /* slider */
+    .length-control {
+      margin: 1.8rem 0 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .length-label {
+      color: #dee9f2;
+      font-weight: 500;
+      min-width: 120px;
+    }
+
+    .length-label span {
+      color: #90b0f0;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-left: 0.3rem;
+    }
+
+    input[type=range] {
+      flex: 2;
+      min-width: 200px;
+      height: 6px;
+      background: #2f3a47;
+      border-radius: 10px;
+      -webkit-appearance: none;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: #3b82f6;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 2px 8px black;
+    }
+
+    /* checkbox grid */
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 0.9rem 1.2rem;
+      margin: 2rem 0 1.8rem;
+    }
+
+    .opt-check {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: #cbd5e1;
+    }
+
+    .opt-check input[type="checkbox"] {
+      width: 1.2rem;
+      height: 1.2rem;
+      accent-color: #3b82f6;
+      border-radius: 4px;
+    }
+
+    .passphrase-extra {
+      background: #1b222a;
+      border-radius: 1.2rem;
+      padding: 1rem 1.2rem;
+      margin: 1.5rem 0 1.2rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .word-count {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      color: #bfd0e6;
+    }
+
+    .word-count input {
+      width: 65px;
+      background: #2a333f;
+      border: 1px solid #475569;
+      color: white;
+      padding: 0.4rem 0.6rem;
+      border-radius: 30px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      margin-top: 1.2rem;
+    }
+
+    .primary-btn {
+      background: #3b82f6;
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 0.9rem 2.2rem;
+      border-radius: 40px;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: 0.15s;
+      border: 1px solid #6095fd;
+    }
+
+    .primary-btn:hover {
+      background: #2563eb;
+      transform: scale(1.02);
+    }
+
+    #regenerateBtn {
+      background: #2d3748;
+    }
+
+    /* toast */
+    .toast {
+      visibility: hidden;
+      min-width: 200px;
+      background: #2b3b4c;
+      color: #e1f0fa;
+      text-align: center;
+      border-radius: 50px;
+      padding: 0.7rem 1.5rem;
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: 500;
+      box-shadow: 0 8px 18px #00000060;
+      border: 1px solid #527a9b;
+      transition: visibility 0.2s, opacity 0.2s;
+      opacity: 0;
+      z-index: 999;
+    }
+
+    .toast.show {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    footer {
+      margin-top: 2rem;
+      color: #5f748e;
+      font-size: 0.8rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="generator-card">
+    <h1>passgen · advanced</h1>
+    <div class="sub">secure like LastPass · dark mode</div>
+
+    <!-- password field with show/hide & copy -->
+    <div class="password-output">
+      <div class="password-input-wrapper">
+        <input type="text" id="passwordField" readonly value="P@ssw0rdX9!p" placeholder="generated password">
+        <button class="toggle-visibility" id="toggleVisibilityBtn" aria-label="show/hide password">👁️</button>
+      </div>
+      <button class="icon-btn" id="copyBtn" title="copy to clipboard">📋</button>
+      <button class="icon-btn" id="regenerateBtn" title="regenerate">🔄</button>
+    </div>
+
+    <!-- strength meter + entropy -->
+    <div class="strength-section">
+      <div class="meter-labels">
+        <span>strength</span>
+        <span id="strengthLabel">Weak</span>
+      </div>
+      <div class="meter-bar-bg">
+        <div id="strengthFill" style="width: 20%;"></div>
+      </div>
+      <div class="entropy-row">
+        <span>entropy <span id="entropyBits">28.2</span> bits</span>
+        <span>crack · <span id="crackTime">instantly</span></span>
+      </div>
+    </div>
+
+    <!-- length slider -->
+    <div class="length-control">
+      <div class="length-label">password length <span id="lengthValue">12</span></div>
+      <input type="range" id="lengthSlider" min="4" max="128" value="12" step="1">
+    </div>
+
+    <!-- character type toggles (first row) -->
+    <div class="options-grid">
+      <label class="opt-check"><input type="checkbox" id="chUppercase" checked> A–Z (uppercase)</label>
+      <label class="opt-check"><input type="checkbox" id="chLowercase" checked> a–z (lowercase)</label>
+      <label class="opt-check"><input type="checkbox" id="chNumbers" checked> 0–9</label>
+      <label class="opt-check"><input type="checkbox" id="chSymbols" checked> !@#$%^&*</label>
+    </div>
+
+    <!-- advanced security toggles -->
+    <div class="options-grid">
+      <label class="opt-check"><input type="checkbox" id="excludeSimilar"> Exclude similar (i l 1 L o 0 O)</label>
+      <label class="opt-check"><input type="checkbox" id="excludeAmbiguous"> Exclude ambiguous { } [ ] ( )</label>
+      <label class="opt-check"><input type="checkbox" id="avoidDuplicates"> Avoid duplicate characters</label>
+      <label class="opt-check"><input type="checkbox" id="requireOnePerType" checked> At least one from each type</label>
+      <label class="opt-check"><input type="checkbox" id="startWithLetter"> Start with a letter</label>
+    </div>
+
+    <!-- extra modes: pronounceable / passphrase -->
+    <div class="passphrase-extra">
+      <label class="opt-check"><input type="radio" name="modeGroup" id="modeRandom" value="random" checked> random</label>
+      <label class="opt-check"><input type="radio" name="modeGroup" id="modePronounceable" value="pronounceable"> pronounceable</label>
+      <label class="opt-check"><input type="radio" name="modeGroup" id="modePassphrase" value="passphrase"> passphrase</label>
+      <div class="word-count">
+        <span>words</span>
+        <input type="number" id="wordCountInput" min="2" max="8" value="4" step="1">
+      </div>
+    </div>
+
+    <!-- main generate button -->
+    <div class="action-buttons">
+      <button class="primary-btn" id="generateBtn">✨ generate new</button>
+    </div>
+
+    <footer>advanced password generator · crypto.getRandomValues</footer>
+  </div>
+
+  <!-- toast container -->
+  <div id="toast" class="toast">📋 password copied</div>
+
+  <script>
+    (function() {
+      // ---------- DOM elements ----------
+      const passwordField = document.getElementById('passwordField');
+      const lengthSlider = document.getElementById('lengthSlider');
+      const lengthSpan = document.getElementById('lengthValue');
+      const strengthFill = document.getElementById('strengthFill');
+      const strengthLabel = document.getElementById('strengthLabel');
+      const entropySpan = document.getElementById('entropyBits');
+      const crackSpan = document.getElementById('crackTime');
+      const copyBtn = document.getElementById('copyBtn');
+      const regenerateBtn = document.getElementById('regenerateBtn');
+      const generateBtn = document.getElementById('generateBtn');
+      const toggleVis = document.getElementById('toggleVisibilityBtn');
+
+      // checkboxes
+      const chUppercase = document.getElementById('chUppercase');
+      const chLowercase = document.getElementById('chLowercase');
+      const chNumbers = document.getElementById('chNumbers');
+      const chSymbols = document.getElementById('chSymbols');
+      const excludeSimilar = document.getElementById('excludeSimilar');
+      const excludeAmbiguous = document.getElementById('excludeAmbiguous');
+      const avoidDuplicates = document.getElementById('avoidDuplicates');
+      const requireOnePerType = document.getElementById('requireOnePerType');
+      const startWithLetter = document.getElementById('startWithLetter');
+
+      // modes
+      const modeRandom = document.getElementById('modeRandom');
+      const modePronounceable = document.getElementById('modePronounceable');
+      const modePassphrase = document.getElementById('modePassphrase');
+      const wordCountInput = document.getElementById('wordCountInput');
+
+      // toast
+      const toast = document.getElementById('toast');
+
+      // ---------- embedded dictionary for passphrase (common words) ----------
+      const WORD_LIST = [
+        "cloud", "mountain", "river", "forest", "ocean", "thunder", "silver", "golden",
+        "brave", "happy", "sunset", "moon", "star", "fire", "wind", "stone", "falcon",
+        "tiger", "eagle", "wolf", "rose", "lily", "koala", "panda", "blue", "green",
+        "red", "swift", "dark", "light", "frost", "flame", "crystal", "ember", "dragon",
+        "phoenix", "raven", "oak", "pine", "willow", "sapphire", "ruby", "pearl", "iron",
+        "steel", "bronze", "shadow", "mist", "dawn", "dusk", "echo", "sparrow", "salmon"
+      ];
+
+      // character sets
+      const UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const LOWER = 'abcdefghijklmnopqrstuvwxyz';
+      const DIGITS = '0123456789';
+      const SYMBOLS = '!@#$%^&*()_+~`|}{[]:;?><,./-=';
+      const SIMILAR_SET = 'il1Lo0O';
+      const AMBIGUOUS_SET = '{}[]()';
+
+      // ---------- helper: secure random integer 0..max-1 ----------
+      function secureRandomInt(max) {
+        if (max <= 0) return 0;
+        const randomBuffer = new Uint32Array(1);
+        crypto.getRandomValues(randomBuffer);
+        return randomBuffer[0] % max;
+      }
+
+      // ---------- get allowed characters based on options ----------
+      function buildAllowedCharset() {
+        let chars = '';
+        if (chUppercase.checked) chars += UPPER;
+        if (chLowercase.checked) chars += LOWER;
+        if (chNumbers.checked) chars += DIGITS;
+        if (chSymbols.checked) chars += SYMBOLS;
+
+        if (excludeSimilar.checked) {
+          chars = chars.split('').filter(c => !SIMILAR_SET.includes(c)).join('');
+        }
+        if (excludeAmbiguous.checked) {
+          chars = chars.split('').filter(c => !AMBIGUOUS_SET.includes(c)).join('');
+        }
+        return chars;
+      }
+
+      // ---------- ensure at least one from each selected type ----------
+      function enforceOnePerType(pwd) {
+        if (!requireOnePerType.checked) return pwd;
+        let needed = [];
+        if (chUppercase.checked && !pwd.split('').some(c => UPPER.includes(c))) needed.push(UPPER[secureRandomInt(UPPER.length)]);
+        if (chLowercase.checked && !pwd.split('').some(c => LOWER.includes(c))) needed.push(LOWER[secureRandomInt(LOWER.length)]);
+        if (chNumbers.checked && !pwd.split('').some(c => DIGITS.includes(c))) needed.push(DIGITS[secureRandomInt(DIGITS.length)]);
+        if (chSymbols.checked && !pwd.split('').some(c => SYMBOLS.includes(c))) needed.push(SYMBOLS[secureRandomInt(SYMBOLS.length)]);
+
+        if (needed.length === 0) return pwd;
+        // replace random positions
+        let arr = pwd.split('');
+        for (let ch of needed) {
+          if (avoidDuplicates.checked && arr.includes(ch)) continue; // skip if duplicate not allowed
+          let idx = secureRandomInt(arr.length);
+          arr[idx] = ch;
+        }
+        return arr.join('');
+      }
+
+      // ---------- avoid duplicates ----------
+      function removeDuplicates(str) {
+        if (!avoidDuplicates.checked) return str;
+        let seen = new Set();
+        return str.split('').filter(c => {
+          if (seen.has(c)) return false;
+          seen.add(c);
+          return true;
+        }).join('');
+      }
+
+      // ---------- start with letter ----------
+      function enforceStartWithLetter(pwd) {
+        if (!startWithLetter.checked) return pwd;
+        if (pwd.length === 0) return pwd;
+        const letters = (chUppercase.checked ? UPPER : '') + (chLowercase.checked ? LOWER : '');
+        if (letters.length === 0) return pwd; // no letter available
+        let first = pwd[0];
+        if (!letters.includes(first)) {
+          let newFirst = letters[secureRandomInt(letters.length)];
+          return newFirst + pwd.slice(1);
+        }
+        return pwd;
+      }
+
+      // ---------- generate random password ----------
+      function generateRandomPassword() {
+        let charset = buildAllowedCharset();
+        if (charset.length === 0) return '';   // nothing selected
+        const length = parseInt(lengthSlider.value, 10);
+        let password = '';
+        for (let i = 0; i < length; i++) {
+          password += charset[secureRandomInt(charset.length)];
+        }
+        // post processing
+        password = enforceOnePerType(password);
+        password = removeDuplicates(password);
+        // if length changed due to dedup, pad if needed
+        while (password.length < length && charset.length > 0) {
+          password += charset[secureRandomInt(charset.length)];
+        }
+        password = enforceStartWithLetter(password);
+        return password;
+      }
+
+      // ---------- pronounceable generator (very simple CVC pattern) ----------
+      function generatePronounceable() {
+        const consonants = 'bcdfghjklmnpqrstvwxyz';
+        const vowels = 'aeiou';
+        let length = parseInt(lengthSlider.value, 10);
+        let result = '';
+        for (let i = 0; i < length; i++) {
+          if (i % 2 === 0) result += consonants[secureRandomInt(consonants.length)];
+          else result += vowels[secureRandomInt(vowels.length)];
+        }
+        if (chUppercase.checked && result.length > 0) {
+          result = result.charAt(0).toUpperCase() + result.slice(1);
+        }
+        return result;
+      }
+
+      // ---------- passphrase generator ----------
+      function generatePassphrase() {
+        let wordsCount = parseInt(wordCountInput.value, 10);
+        if (wordsCount < 2) wordsCount = 2;
+        if (wordsCount > 8) wordsCount = 8;
+        let selected = [];
+        for (let i = 0; i < wordsCount; i++) {
+          let idx = secureRandomInt(WORD_LIST.length);
+          selected.push(WORD_LIST[idx]);
+        }
+        let sep = (chSymbols.checked ? SYMBOLS[secureRandomInt(SYMBOLS.length)] : '-');
+        let phrase = selected.join(sep);
+        if (chNumbers.checked) {
+          phrase += DIGITS[secureRandomInt(DIGITS.length)];
+        }
+        return phrase;
+      }
+
+      // ---------- main generate dispatcher ----------
+      function generatePassword() {
+        let pwd = '';
+        if (modePassphrase.checked) {
+          pwd = generatePassphrase();
+        } else if (modePronounceable.checked) {
+          pwd = generatePronounceable();
+          // ensure length match
+          let target = parseInt(lengthSlider.value,10);
+          while (pwd.length < target) pwd += DIGITS[secureRandomInt(DIGITS.length)];
+          if (pwd.length > target) pwd = pwd.slice(0, target);
+        } else {
+          pwd = generateRandomPassword();
+        }
+
+        if (pwd === '' && (chUppercase.checked || chLowercase.checked || chNumbers.checked || chSymbols.checked)) {
+          pwd = 'error'; // fallback
+        } else if (pwd === '') {
+          pwd = '✔️ select type';
+        }
+        passwordField.value = pwd;
+        updateStrengthMeter(pwd);
+      }
+
+      // ---------- strength & entropy ----------
+      function calculateEntropy(pwd) {
+        let pool = 0;
+        if (/[A-Z]/.test(pwd)) pool += 26;
+        if (/[a-z]/.test(pwd)) pool += 26;
+        if (/[0-9]/.test(pwd)) pool += 10;
+        if (/[^A-Za-z0-9]/.test(pwd)) pool += 32; // symbols approx
+        if (pool === 0) return 0;
+        return Math.round(pwd.length * Math.log2(pool) * 10) / 10;
+      }
+
+      function crackTimeEstimate(entropy) {
+        if (entropy < 28) return 'instantly';
+        if (entropy < 36) return '~ minutes';
+        if (entropy < 60) return '~ days/years';
+        if (entropy < 80) return 'centuries';
+        return 'eternity';
+      }
+
+      function updateStrengthMeter(pwd) {
+        let entropy = calculateEntropy(pwd);
+        entropySpan.innerText = entropy;
+        let crack = crackTimeEstimate(entropy);
+        crackSpan.innerText = crack;
+
+        let percent = Math.min(100, (entropy / 100) * 150);
+        if (entropy === 0) percent = 0;
+        strengthFill.style.width = percent + '%';
+
+        if (entropy < 30) strengthLabel.innerText = 'Weak';
+        else if (entropy < 50) strengthLabel.innerText = 'Medium';
+        else if (entropy < 70) strengthLabel.innerText = 'Strong';
+        else strengthLabel.innerText = 'Very Strong';
+      }
+
+      // ---------- copy to clipboard ----------
+      copyBtn.addEventListener('click', () => {
+        if (!passwordField.value) return;
+        navigator.clipboard.writeText(passwordField.value).then(() => {
+          toast.classList.add('show');
+          setTimeout(() => toast.classList.remove('show'), 2000);
+        }).catch(() => alert('copy failed'));
+      });
+
+      // ---------- toggle visibility ----------
+      toggleVis.addEventListener('click', () => {
+        if (passwordField.type === 'password') {
+          passwordField.type = 'text';
+          toggleVis.innerText = '🔒';
+        } else {
+          passwordField.type = 'password';
+          toggleVis.innerText = '👁️';
+        }
+      });
+
+      // ---------- event listeners ----------
+      lengthSlider.addEventListener('input', () => {
+        lengthSpan.innerText = lengthSlider.value;
+      });
+
+      generateBtn.addEventListener('click', () => generatePassword());
+      regenerateBtn.addEventListener('click', () => generatePassword());
+
+      // init on page load
+      window.addEventListener('DOMContentLoaded', () => {
+        generatePassword();
+      });
+
+      // prevent no-type selection: if all unchecked, last one forced?
+      function ensureOneChecked() {
+        if (!chUppercase.checked && !chLowercase.checked && !chNumbers.checked && !chSymbols.checked) {
+          // force lowercase as fallback
+          chLowercase.checked = true;
+        }
+      }
+      [chUppercase, chLowercase, chNumbers, chSymbols].forEach(cb => {
+        cb.addEventListener('change', ensureOneChecked);
+      });
+
+      // show initial
+    })();
+  </script>
+</body>
+</html>
